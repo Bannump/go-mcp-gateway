@@ -1,0 +1,22 @@
+linters:
+  enable:
+    - errcheck
+    - govet
+    - staticcheck
+    - unused
+    - gofmt
+
+linters-settings:
+  errcheck:
+    check-blank: false
+
+issues:
+  exclude-rules:
+    - linters: [errcheck]
+      text: "json.NewEncoder"
+    - linters: [errcheck]
+      text: "fmt.Fprint"
+    - linters: [errcheck]
+      text: "w.Write"
+    - linters: [errcheck]
+      text: "db.Exec"

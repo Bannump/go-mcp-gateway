@@ -1,0 +1,18 @@
+# Binaries
+server
+/server
+
+# SQLite
+*.db
+*.db-shm
+*.db-wal
+
+# Coverage
+coverage.out
+
+# Env
+.env
+
+# OS
+.DS_Store
+Thumbs.db

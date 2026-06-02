@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  gateway:
+    build:
+      context: ..
+      dockerfile: deployments/Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - OIDC_ISSUER=${OIDC_ISSUER}
+      - OIDC_AUDIENCE=${OIDC_AUDIENCE}
+      - OIDC_JWKS_URI=${OIDC_JWKS_URI}
+      - PORT=8080
+      - LOG_FORMAT=json
+      - LOG_LEVEL=info
+      - STORAGE_BACKEND=${STORAGE_BACKEND:-memory}
+      - SQLITE_PATH=/data/mcp.db
+      - RATE_LIMIT_RPM=${RATE_LIMIT_RPM:-60}
+    volumes:
+      - sqlite-data:/data
+    restart: unless-stopped
+
+volumes:
+  sqlite-data:
