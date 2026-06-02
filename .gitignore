@@ -1,5 +1,4 @@
-# Binaries
-server
+# Compiled binary (root-level only)
 /server
 
 # SQLite
