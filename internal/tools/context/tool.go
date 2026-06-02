@@ -109,7 +109,7 @@ func (t *ContextTool) Execute(ctx stdctx.Context, params json.RawMessage) (mcp.T
 		queryLower := strings.ToLower(q)
 		for _, key := range keys {
 			if strings.Contains(strings.ToLower(key), queryLower) {
-				val, err := t.store.Get(ctx, key)
+				val, _, err := t.store.Get(ctx, key)
 				if err == nil {
 					hits = append(hits, memoryHit{Key: key, Value: val})
 				}

@@ -103,7 +103,7 @@ func (t *RetrieveTool) Execute(ctx context.Context, params json.RawMessage) (mcp
 		return mcp.ErrorResult("key must not be empty"), nil
 	}
 
-	value, err := t.store.Get(ctx, input.Key)
+	value, expiresAt, err := t.store.Get(ctx, input.Key)
 	if err != nil {
 		if errors.Is(err, storage.ErrNotFound) {
 			return mcp.ErrorResult(fmt.Sprintf("key not found: %s", input.Key)), nil
@@ -111,10 +111,15 @@ func (t *RetrieveTool) Execute(ctx context.Context, params json.RawMessage) (mcp
 		return mcp.ErrorResult(fmt.Sprintf("store error: %v", err)), nil
 	}
 
+	var expiresAtVal interface{}
+	if !expiresAt.IsZero() {
+		expiresAtVal = expiresAt.UTC().Format(time.RFC3339)
+	}
+
 	out, _ := json.Marshal(map[string]interface{}{
 		"key":        input.Key,
 		"value":      value,
-		"expires_at": nil,
+		"expires_at": expiresAtVal,
 	})
 	return mcp.TextResult(string(out)), nil
 }

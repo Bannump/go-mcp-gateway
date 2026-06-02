@@ -64,16 +64,17 @@ func (m *MemoryStore) Set(_ context.Context, key, value string, ttl time.Duratio
 	return nil
 }
 
-// Get retrieves a value, returning ErrNotFound if missing or expired.
-func (m *MemoryStore) Get(_ context.Context, key string) (string, error) {
+// Get retrieves a value and expiry time, returning ErrNotFound if missing or expired.
+// The zero time.Time means no expiry was set.
+func (m *MemoryStore) Get(_ context.Context, key string) (string, time.Time, error) {
 	m.mu.RLock()
 	e, ok := m.data[key]
 	m.mu.RUnlock()
 
 	if !ok || e.expired() {
-		return "", ErrNotFound
+		return "", time.Time{}, ErrNotFound
 	}
-	return e.value, nil
+	return e.value, e.expiresAt, nil
 }
 
 // Delete removes a key.

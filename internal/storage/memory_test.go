@@ -16,9 +16,21 @@ func TestMemoryStore_SetGet(t *testing.T) {
 	defer s.Close()
 
 	require.NoError(t, s.Set(context.Background(), "foo", "bar", 0))
-	val, err := s.Get(context.Background(), "foo")
+	val, exp, err := s.Get(context.Background(), "foo")
 	require.NoError(t, err)
 	assert.Equal(t, "bar", val)
+	assert.True(t, exp.IsZero(), "no-expiry entry should return zero time")
+}
+
+func TestMemoryStore_SetGetWithTTL(t *testing.T) {
+	s := storage.NewMemoryStore()
+	defer s.Close()
+
+	require.NoError(t, s.Set(context.Background(), "ttlkey", "v", time.Hour))
+	_, exp, err := s.Get(context.Background(), "ttlkey")
+	require.NoError(t, err)
+	assert.False(t, exp.IsZero(), "entry with TTL should return non-zero expiry")
+	assert.WithinDuration(t, time.Now().Add(time.Hour), exp, 2*time.Second)
 }
 
 func TestMemoryStore_Expired(t *testing.T) {
@@ -28,7 +40,7 @@ func TestMemoryStore_Expired(t *testing.T) {
 	require.NoError(t, s.Set(context.Background(), "key", "value", 10*time.Millisecond))
 	time.Sleep(20 * time.Millisecond)
 
-	_, err := s.Get(context.Background(), "key")
+	_, _, err := s.Get(context.Background(), "key")
 	assert.ErrorIs(t, err, storage.ErrNotFound)
 }
 
@@ -39,7 +51,7 @@ func TestMemoryStore_Delete(t *testing.T) {
 	require.NoError(t, s.Set(context.Background(), "key", "value", 0))
 	require.NoError(t, s.Delete(context.Background(), "key"))
 
-	_, err := s.Get(context.Background(), "key")
+	_, _, err := s.Get(context.Background(), "key")
 	assert.ErrorIs(t, err, storage.ErrNotFound)
 }
 

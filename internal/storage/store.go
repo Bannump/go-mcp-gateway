@@ -14,8 +14,9 @@ var ErrNotFound = errors.New("storage: key not found")
 type Store interface {
 	// Set stores a key-value pair. If ttl is 0, the entry never expires.
 	Set(ctx context.Context, key, value string, ttl time.Duration) error
-	// Get retrieves a value. Returns ErrNotFound if the key is absent or expired.
-	Get(ctx context.Context, key string) (string, error)
+	// Get retrieves a value and its expiry time. The zero time.Time means no expiry.
+	// Returns ErrNotFound if the key is absent or expired.
+	Get(ctx context.Context, key string) (string, time.Time, error)
 	// Delete removes a key.
 	Delete(ctx context.Context, key string) error
 	// List returns all keys with the given prefix.

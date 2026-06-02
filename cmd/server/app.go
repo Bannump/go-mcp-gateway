@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -37,23 +36,16 @@ func wire(cfg *config.Config, stopCh <-chan struct{}) (*dependencies, error) {
 	reg := prometheus.NewRegistry()
 	m := observability.NewMetrics(reg)
 
-	var jwksClient *jwks.Client
-	var authMw func(http.Handler) http.Handler
-
-	if cfg.DevMode {
-		logger.Warn("DEV_MODE=true: auth is disabled — do not use in production")
-		authMw = devPassthroughMiddleware
-	} else {
-		jwksClient = jwks.NewClient(cfg.OIDCJwksURI, cfg.JWKSRefreshInterval, logger,
-			m.JWKSRefreshesTotal.Inc, m.JWKSRefreshFailures.Inc)
-		if err := jwksClient.Start(stopCh); err != nil {
-			return nil, fmt.Errorf("wire: jwks: %w", err)
-		}
-		verifier := auth.NewVerifier(jwksClient, cfg.OIDCIssuer, cfg.OIDCAudience)
-		authMw = auth.Middleware(verifier, logger, func(reason string) {
-			m.AuthFailuresTotal.WithLabelValues(reason).Inc()
-		})
+	jwksClient := jwks.NewClient(cfg.OIDCJwksURI, cfg.JWKSRefreshInterval, logger,
+		m.JWKSRefreshesTotal.Inc, m.JWKSRefreshFailures.Inc)
+	if err := jwksClient.Start(stopCh); err != nil {
+		return nil, fmt.Errorf("wire: jwks: %w", err)
 	}
+
+	verifier := auth.NewVerifier(jwksClient, cfg.OIDCIssuer, cfg.OIDCAudience)
+	authMw := auth.Middleware(verifier, logger, func(reason string) {
+		m.AuthFailuresTotal.WithLabelValues(reason).Inc()
+	})
 
 	store, err := buildStore(cfg)
 	if err != nil {

@@ -63,8 +63,9 @@ func (s *SQLiteStore) Set(_ context.Context, key, value string, ttl time.Duratio
 	return nil
 }
 
-// Get retrieves a value, returning ErrNotFound if missing or expired.
-func (s *SQLiteStore) Get(_ context.Context, key string) (string, error) {
+// Get retrieves a value and expiry time, returning ErrNotFound if missing or expired.
+// The zero time.Time means no expiry was set.
+func (s *SQLiteStore) Get(_ context.Context, key string) (string, time.Time, error) {
 	var value string
 	var expiresAt int64
 	err := s.db.QueryRow(
@@ -72,15 +73,19 @@ func (s *SQLiteStore) Get(_ context.Context, key string) (string, error) {
 	).Scan(&value, &expiresAt)
 
 	if err == sql.ErrNoRows {
-		return "", ErrNotFound
+		return "", time.Time{}, ErrNotFound
 	}
 	if err != nil {
-		return "", fmt.Errorf("storage: sqlite get: %w", err)
+		return "", time.Time{}, fmt.Errorf("storage: sqlite get: %w", err)
 	}
 	if expiresAt > 0 && time.Now().Unix() >= expiresAt {
-		return "", ErrNotFound
+		return "", time.Time{}, ErrNotFound
 	}
-	return value, nil
+	var expTime time.Time
+	if expiresAt > 0 {
+		expTime = time.Unix(expiresAt, 0)
+	}
+	return value, expTime, nil
 }
 
 // Delete removes a key.
